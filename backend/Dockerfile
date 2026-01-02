@@ -1,0 +1,15 @@
+FROM denoland/deno:latest
+
+WORKDIR /app
+
+# Copy backend files
+COPY backend/deno.json ./
+COPY backend/lottery ./lottery
+COPY backend/main.ts backend/mod.ts ./
+
+# Cache dependencies
+RUN deno cache main.ts
+
+EXPOSE 3350
+
+CMD ["deno", "run", "--allow-net", "--allow-read", "--allow-write", "main.ts"]

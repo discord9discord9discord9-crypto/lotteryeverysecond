@@ -13,13 +13,13 @@ const powerball = lottery(
     async draw() {
       const numbers = new Set<number>();
       while (numbers.size < 5) {
-        numbers.add(await randomInt(1, 70));
+        numbers.add(randomInt(1, 70));
       }
-      const powerball = await randomInt(1, 27);
+      const powerball = randomInt(1, 27);
 
       return {
         type: "powerball",
-        numbers: Array.from(numbers),
+        numbers: Array.from(numbers).sort((a, b) => a - b),
         powerball,
       };
     },

@@ -3,7 +3,6 @@ import { lottery } from "./lottery/base.ts";
 import { db, drawSchema } from "./lottery/db.ts";
 import { euroJackpot } from "./lottery/eurojackpot.ts";
 import { powerball } from "./lottery/poweball.ts";
-import { parse } from "node:path";
 
 const sleep = (ms: number) =>
   new Promise<void>((res) =>
@@ -131,7 +130,6 @@ if (import.meta.main) {
       payloads.forEach((p) => socket.send(p));
     });
   });
-
   Deno.serve({ port: 3350 }, (req) => {
     for (const [pattern, handler] of routes.entries()) {
       const patternResult = pattern.exec(req.url);

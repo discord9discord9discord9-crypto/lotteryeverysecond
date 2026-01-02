@@ -13,16 +13,16 @@ const euroJackpot = lottery(
     async draw() {
       const numbers = new Set<number>();
       while (numbers.size < 5) {
-        numbers.add(await randomInt(1, 51));
+        numbers.add(randomInt(1, 51));
       }
       const stars = new Set<number>();
       while (stars.size < 2) {
-        stars.add(await randomInt(1, 13));
+        stars.add(randomInt(1, 13));
       }
       return {
         type: "eurojackpot",
-        numbers: Array.from(numbers),
-        stars: Array.from(stars),
+        numbers: Array.from(numbers).sort((a, b) => a - b),
+        stars: Array.from(stars).sort((a, b) => a - b),
       };
     },
     score(guess, target) {

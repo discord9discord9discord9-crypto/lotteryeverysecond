@@ -1,7 +1,8 @@
 import { DatabaseSync } from "node:sqlite";
 import { z, ZodObject } from "zod";
 
-const db = new DatabaseSync("db.db");
+const dbPath = Deno.env.get("DATABASE_PATH") || "db.db";
+const db = new DatabaseSync(dbPath);
 
 db.exec(
   `

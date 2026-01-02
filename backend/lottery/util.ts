@@ -1,18 +1,16 @@
-import { randomInt as _randomInt } from "node:crypto";
+export function randomInt(min: number, max: number) {
+  const range = max - min + 1;
+  const limit = 0x100000000 - (0x100000000 % range);
+  const array = new Uint32Array(1);
+  let value: number;
+  let result: number;
 
-// because this is a websocket server we want give
-// the event loop as many oppertunities to do stuff as possible
-// this is bad for memory but probably good for throughput
-const randomInt = (min: number, max: number) => {
-  return new Promise<number>((res, rej) => {
-    _randomInt(min, max, (err, result) => {
-      if (err) {
-        rej(err);
-      } else {
-        res(result);
-      }
-    });
-  });
-};
+  do {
+    crypto.getRandomValues(array);
+    value = array[0];
+  } while (value >= limit);
 
-export { randomInt };
+  result = min + (value % range);
+
+  return result;
+}
