@@ -1,0 +1,46 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: lottery-backend
+    restart: unless-stopped
+    networks:
+      - web
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DENO_ENV=production
+      - DATABASE_PATH=/app/data/db.db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lottery-backend.rule=Host(`lotteryeverysecond.lffl.me`) && (PathPrefix(`/ws`) || PathPrefix(`/history`))"
+      - "traefik.http.routers.lottery-backend.entrypoints=websecure"
+      - "traefik.http.routers.lottery-backend.tls=true"
+      - "traefik.http.routers.lottery-backend.tls.certresolver=myresolver"
+      - "traefik.http.services.lottery-backend.loadbalancer.server.port=3350"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    container_name: lottery-frontend
+    restart: unless-stopped
+    networks:
+      - web
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lottery-frontend.rule=Host(`lotteryeverysecond.lffl.me`)"
+      - "traefik.http.routers.lottery-frontend.entrypoints=websecure"
+      - "traefik.http.routers.lottery-frontend.tls=true"
+      - "traefik.http.routers.lottery-frontend.tls.certresolver=myresolve"
+      - "traefik.http.services.lottery-frontend.loadbalancer.server.port=80"
+
+networks:
+  web:
+    external: true
+
+volumes:
+  data:
