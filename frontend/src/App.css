@@ -519,8 +519,20 @@ h1 {
   padding: 2rem 0;
   border-top: 1px solid #333;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
 }
 
+@media (max-width: 900px) {
+  .footer {
+    flex-direction: column;
+  }
+  .footer-separator {
+    display: none;
+  }
+}
 .footer a {
   color: #666;
   text-decoration: none;
@@ -530,6 +542,23 @@ h1 {
 .footer a:hover {
   color: #999;
   text-decoration: underline;
+}
+
+.footer .github-link {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.footer .github-link:hover {
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.footer .github-link img {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 @media (max-width: 900px) {

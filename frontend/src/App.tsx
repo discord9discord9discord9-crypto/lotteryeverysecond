@@ -25,10 +25,15 @@ function App() {
     (EuroJackpotResult | PowerballResult)[]
   >([]);
   const [isPaused, setIsPaused] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalWins, setTotalWins] = useState(0);
   const itemsPerPage = 20;
+
+  const params = new URLSearchParams(window.location.search);
+  const pageParam = params.get("page");
+  const [currentPage, setCurrentPage] = useState(
+    pageParam ? parseInt(pageParam) : 1,
+  );
 
   const refetchAll = useCallback(async (page: number = 0) => {
     const [euroResult, powerResult] = await Promise.all([
@@ -58,6 +63,13 @@ function App() {
 
   const handlePageChange = async (page: number) => {
     setCurrentPage(page);
+    const url = new URL(window.location.href);
+    if (page === 1) {
+      url.searchParams.delete("page");
+    } else {
+      url.searchParams.set("page", page.toString());
+    }
+    window.history.pushState({}, "", url);
     await refetchAll(page - 1);
   };
 
@@ -171,6 +183,16 @@ function App() {
         <a href="/impressum.html">Impressum</a>
         <span className="footer-separator"> | </span>
         <a href="/datenschutz.html">Datenschutzerklärung</a>
+        <span className="footer-separator"> | </span>
+        <a
+          href="https://github.com/Loeffeldude/lotteryeverysecond"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="github-link"
+        >
+          <img src="/github-mark-white.svg" alt="GitHub" />
+          <span> Source</span>
+        </a>
       </footer>
     </div>
   );
