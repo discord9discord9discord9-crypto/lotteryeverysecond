@@ -188,6 +188,45 @@ h1 {
   overflow: hidden;
 }
 
+.ball.editable {
+  background: #333;
+  border: 2px dashed #555;
+  text-align: center;
+  color: #e0e0e0;
+  cursor: pointer;
+}
+
+.ball.editable:hover {
+  border-color: #777;
+  background: #3a3a3a;
+}
+
+.ball.editable:focus {
+  outline: none;
+  border-color: #999;
+  border-style: solid;
+}
+
+.ball.editable::before,
+.ball.editable > span::before {
+  display: none;
+}
+
+.ball.editable::placeholder {
+  color: #666;
+}
+
+.ball.editable::-webkit-inner-spin-button,
+.ball.editable::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.ball.editable[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .ball.star {
   background: #af780f;
 }
