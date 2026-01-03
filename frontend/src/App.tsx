@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type {
   EuroJackpotResult,
   PowerballResult,
@@ -54,87 +54,109 @@ function App() {
 
   const handlePageChange = async (page: number) => {
     setCurrentPage(page);
-    if (page !== 1) {
-      setIsPaused(true);
-    }
     await refetchAll(page - 1);
   };
 
-  useEffect(() => {
-    let ws: WebSocket | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-    let reconnectAttempt = 0;
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const reconnectAttemptRef = useRef(0);
+
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
+      const data = JSON.parse(event.data);
+
+      if (data.score === 1) {
+        setTotalWins((prev) => prev + 1);
+      }
+
+      if (data.lottery_type === "eurojackpot") {
+        setEuroJackpot(data as EuroJackpotResult);
+        if (!isPaused && currentPage === 1) {
+          setHistory((prev) =>
+            [data as EuroJackpotResult, ...prev].slice(0, itemsPerPage),
+          );
+        }
+      } else if (data.lottery_type === "powerball") {
+        setPowerball(data as PowerballResult);
+        if (!isPaused && currentPage === 1) {
+          setHistory((prev) =>
+            [data as PowerballResult, ...prev].slice(0, itemsPerPage),
+          );
+        }
+      }
+    },
+    [isPaused, currentPage],
+  );
+
+  const handleOpen = useCallback(() => {
+    reconnectAttemptRef.current = 0;
+    console.log("WebSocket connected");
+  }, []);
+
+  const handleError = useCallback((error: Event) => {
+    console.error("WebSocket error:", error);
+    wsRef.current?.close();
+  }, []);
+
+  const handleClose = useCallback(() => {
+    console.log("WebSocket closed, reconnecting...");
+
+    if (reconnectTimeoutRef.current) {
+      return;
+    }
+
     const maxReconnectDelay = 30000;
     const baseDelay = 1000;
+    const delay = Math.min(
+      baseDelay * Math.pow(2, reconnectAttemptRef.current),
+      maxReconnectDelay,
+    );
 
-    const connect = () => {
+    reconnectAttemptRef.current++;
+    console.log(
+      `Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`,
+    );
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      wsRef.current = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    }, delay);
+  }, []);
 
-      ws.addEventListener("open", () => {
-        reconnectAttempt = 0;
-        console.log("WebSocket connected");
-      });
-
-      ws.addEventListener("message", (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.lottery_type === "eurojackpot") {
-          setEuroJackpot(data as EuroJackpotResult);
-          if (!isPaused && currentPage === 1) {
-            setHistory((prev) =>
-              [data as EuroJackpotResult, ...prev].slice(0, itemsPerPage),
-            );
-          }
-        } else if (data.lottery_type === "powerball") {
-          setPowerball(data as PowerballResult);
-          if (!isPaused && currentPage === 1) {
-            setHistory((prev) =>
-              [data as PowerballResult, ...prev].slice(0, itemsPerPage),
-            );
-          }
-        }
-      });
-
-      ws.addEventListener("close", () => {
-        console.log("WebSocket closed, reconnecting...");
-        scheduleReconnect();
-      });
-
-      ws.addEventListener("error", (error) => {
-        console.error("WebSocket error:", error);
-        ws?.close();
-      });
-    };
-
-    const scheduleReconnect = () => {
-      if (reconnectTimeout) {
-        return;
-      }
-
-      const delay = Math.min(
-        baseDelay * Math.pow(2, reconnectAttempt),
-        maxReconnectDelay,
-      );
-
-      reconnectAttempt++;
-      console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempt})`);
-
-      reconnectTimeout = setTimeout(() => {
-        reconnectTimeout = null;
-        connect();
-      }, delay);
-    };
-
-    connect();
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    wsRef.current = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
     return () => {
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
       }
-      ws?.close();
+      wsRef.current?.close();
     };
-  }, [isPaused, currentPage]);
+  }, []);
+
+  useEffect(() => {
+    const ws = wsRef.current;
+    if (!ws) {
+      return;
+    }
+
+    ws.addEventListener("open", handleOpen);
+    ws.addEventListener("message", handleMessage);
+    ws.addEventListener("error", handleError);
+    ws.addEventListener("close", handleClose);
+
+    return () => {
+      ws.removeEventListener("open", handleOpen);
+      ws.removeEventListener("message", handleMessage);
+      ws.removeEventListener("error", handleError);
+      ws.removeEventListener("close", handleClose);
+    };
+  }, [handleOpen, handleMessage, handleError, handleClose]);
 
   const handlePauseToggle = async () => {
     if (isPaused && currentPage === 1) {
@@ -143,18 +165,16 @@ function App() {
     setIsPaused(!isPaused);
   };
 
-  const fetchWins = async () => {
-    const response = await fetch("/wins");
-    const data = await response.json();
-    setTotalWins(data.wins);
-  };
-
   useEffect(() => {
-    refetchAll(0);
-    fetchWins();
+    const fetchInitialData = async () => {
+      await refetchAll(0);
+      
+      const response = await fetch("/wins");
+      const data = await response.json();
+      setTotalWins(data.wins);
+    };
 
-    const winsInterval = setInterval(fetchWins, 10000);
-    return () => clearInterval(winsInterval);
+    fetchInitialData();
   }, [refetchAll]);
 
   return (
