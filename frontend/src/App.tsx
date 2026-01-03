@@ -61,31 +61,78 @@ function App() {
   };
 
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempt = 0;
+    const maxReconnectDelay = 30000;
+    const baseDelay = 1000;
 
-    ws.addEventListener("message", (event) => {
-      const data = JSON.parse(event.data);
+    const connect = () => {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
-      if (data.lottery_type === "eurojackpot") {
-        setEuroJackpot(data as EuroJackpotResult);
-        if (!isPaused && currentPage === 1) {
-          setHistory((prev) =>
-            [data as EuroJackpotResult, ...prev].slice(0, itemsPerPage),
-          );
+      ws.addEventListener("open", () => {
+        reconnectAttempt = 0;
+        console.log("WebSocket connected");
+      });
+
+      ws.addEventListener("message", (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.lottery_type === "eurojackpot") {
+          setEuroJackpot(data as EuroJackpotResult);
+          if (!isPaused && currentPage === 1) {
+            setHistory((prev) =>
+              [data as EuroJackpotResult, ...prev].slice(0, itemsPerPage),
+            );
+          }
+        } else if (data.lottery_type === "powerball") {
+          setPowerball(data as PowerballResult);
+          if (!isPaused && currentPage === 1) {
+            setHistory((prev) =>
+              [data as PowerballResult, ...prev].slice(0, itemsPerPage),
+            );
+          }
         }
-      } else if (data.lottery_type === "powerball") {
-        setPowerball(data as PowerballResult);
-        if (!isPaused && currentPage === 1) {
-          setHistory((prev) =>
-            [data as PowerballResult, ...prev].slice(0, itemsPerPage),
-          );
-        }
+      });
+
+      ws.addEventListener("close", () => {
+        console.log("WebSocket closed, reconnecting...");
+        scheduleReconnect();
+      });
+
+      ws.addEventListener("error", (error) => {
+        console.error("WebSocket error:", error);
+        ws?.close();
+      });
+    };
+
+    const scheduleReconnect = () => {
+      if (reconnectTimeout) {
+        return;
       }
-    });
+
+      const delay = Math.min(
+        baseDelay * Math.pow(2, reconnectAttempt),
+        maxReconnectDelay,
+      );
+      
+      reconnectAttempt++;
+      console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempt})`);
+
+      reconnectTimeout = setTimeout(() => {
+        reconnectTimeout = null;
+        connect();
+      }, delay);
+    };
+
+    connect();
 
     return () => {
-      ws.close();
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      ws?.close();
     };
   }, [isPaused]);
 
