@@ -1,10 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {
   EuroJackpotResult,
   PowerballResult,
 } from "@lotteryeverysecond/backend";
 import Ball from "./Ball.tsx";
 import "./App.css";
+
+const fetchHistory = async (type: string, page: number) => {
+  const response = await fetch(`/history/${type}?page=${page}`);
+  const data = await response.json();
+  return { data: data.data, total: data.total };
+};
 
 function App() {
   const [euroJackpot, setEuroJackpot] = useState<EuroJackpotResult | null>(
@@ -20,13 +26,7 @@ function App() {
   const [totalWins, setTotalWins] = useState(0);
   const itemsPerPage = 20;
 
-  const fetchHistory = async (type: string, page: number) => {
-    const response = await fetch(`/history/${type}?page=${page}`);
-    const data = await response.json();
-    return { data: data.data, total: data.total };
-  };
-
-  const refetchAll = async (page: number = 0) => {
+  const refetchAll = useCallback(async (page: number = 0) => {
     const [euroResult, powerResult] = await Promise.all([
       fetchHistory("eurojackpot", page),
       fetchHistory("powerball", page),
@@ -50,7 +50,7 @@ function App() {
 
     setHistory(combined);
     setTotalCount(Math.max(euroResult.total, powerResult.total));
-  };
+  }, []);
 
   const handlePageChange = async (page: number) => {
     setCurrentPage(page);
@@ -116,7 +116,7 @@ function App() {
         baseDelay * Math.pow(2, reconnectAttempt),
         maxReconnectDelay,
       );
-      
+
       reconnectAttempt++;
       console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempt})`);
 
@@ -134,7 +134,7 @@ function App() {
       }
       ws?.close();
     };
-  }, [isPaused]);
+  }, [isPaused, currentPage]);
 
   const handlePauseToggle = async () => {
     if (isPaused && currentPage === 1) {
@@ -152,10 +152,10 @@ function App() {
   useEffect(() => {
     refetchAll(0);
     fetchWins();
-    
+
     const winsInterval = setInterval(fetchWins, 10000);
     return () => clearInterval(winsInterval);
-  }, []);
+  }, [refetchAll]);
 
   return (
     <div className="container">
