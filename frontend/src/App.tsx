@@ -517,6 +517,8 @@ function App() {
 
       <footer className="footer">
         <a href="/impressum.html">Impressum</a>
+        <span className="footer-separator"> | </span>
+        <a href="/datenschutz.html">Datenschutzerklärung</a>
       </footer>
     </div>
   );
