@@ -57,10 +57,8 @@ function App() {
     await refetchAll(page - 1);
   };
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptRef = useRef(0);
 
   const handleMessage = useCallback(
@@ -97,7 +95,6 @@ function App() {
 
   const handleError = useCallback((error: Event) => {
     console.error("WebSocket error:", error);
-    wsRef.current?.close();
   }, []);
 
   const handleClose = useCallback(() => {
@@ -115,32 +112,27 @@ function App() {
     );
 
     reconnectAttemptRef.current++;
-    console.log(
-      `Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`,
-    );
+    console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`);
 
     reconnectTimeoutRef.current = setTimeout(() => {
       reconnectTimeoutRef.current = null;
-
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      wsRef.current = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      setWs(new WebSocket(`${protocol}//${window.location.host}/ws`));
     }, delay);
   }, []);
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    wsRef.current = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    setWs(new WebSocket(`${protocol}//${window.location.host}/ws`));
 
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      wsRef.current?.close();
     };
   }, []);
 
   useEffect(() => {
-    const ws = wsRef.current;
     if (!ws) {
       return;
     }
@@ -156,7 +148,7 @@ function App() {
       ws.removeEventListener("error", handleError);
       ws.removeEventListener("close", handleClose);
     };
-  }, [handleOpen, handleMessage, handleError, handleClose]);
+  }, [ws, handleOpen, handleMessage, handleError, handleClose]);
 
   const handlePauseToggle = async () => {
     if (isPaused && currentPage === 1) {
