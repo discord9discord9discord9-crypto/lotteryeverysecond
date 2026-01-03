@@ -139,7 +139,6 @@ function App() {
 
     fetchInitialData();
   }, [refetchAll]);
-
   return (
     <div className="container">
       <header>
