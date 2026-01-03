@@ -51,6 +51,27 @@ h1 {
   line-height: 1.5;
 }
 
+.wins-counter {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+
+  display: flex;
+  justify-content: center;
+}
+
+.wins-label {
+  color: #999;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+.wins-number {
+  color: #22c55e;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -394,7 +415,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .balls-inline .ball {

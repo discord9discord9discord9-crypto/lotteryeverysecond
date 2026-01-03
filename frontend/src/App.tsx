@@ -17,6 +17,7 @@ function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [totalWins, setTotalWins] = useState(0);
   const itemsPerPage = 20;
 
   const fetchHistory = async (type: string, page: number) => {
@@ -95,8 +96,18 @@ function App() {
     setIsPaused(!isPaused);
   };
 
+  const fetchWins = async () => {
+    const response = await fetch("/wins");
+    const data = await response.json();
+    setTotalWins(data.wins);
+  };
+
   useEffect(() => {
     refetchAll(0);
+    fetchWins();
+    
+    const winsInterval = setInterval(fetchWins, 10000);
+    return () => clearInterval(winsInterval);
   }, []);
 
   return (
@@ -110,6 +121,10 @@ function App() {
           We play both Powerball and EuroJackpot lotteries automatically, every
           single second. Watch the dreams come true (or not) in real-time.
         </p>
+        <div className="wins-counter">
+          <span className="wins-label">Total Jackpot Wins:</span>
+          <span className="wins-number">{totalWins}</span>
+        </div>
       </header>
 
       <div className="cards">

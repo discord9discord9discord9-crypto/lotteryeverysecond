@@ -14,7 +14,7 @@ services:
       - DATABASE_PATH=/app/data/db.db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.lottery-backend.rule=Host(`lotteryeverysecond.lffl.me`) && (PathPrefix(`/ws`) || PathPrefix(`/history`))"
+      - "traefik.http.routers.lottery-backend.rule=Host(`lotteryeverysecond.lffl.me`) && (PathPrefix(`/ws`) || PathPrefix(`/history`) || PathPrefix(`/wins`))"
       - "traefik.http.routers.lottery-backend.entrypoints=websecure"
       - "traefik.http.routers.lottery-backend.tls=true"
       - "traefik.http.routers.lottery-backend.tls.certresolver=myresolver"

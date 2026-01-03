@@ -16,6 +16,7 @@ db.exec(
 	);
 
   CREATE INDEX IF NOT EXISTS idx_draw_type ON draw (lottery_type);
+  CREATE INDEX IF NOT EXISTS idx_score ON draw (score);
   `,
 );
 

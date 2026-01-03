@@ -23,6 +23,10 @@ export default defineConfig({
         target: "http://localhost:3350",
         changeOrigin: true,
       },
+      "/wins": {
+        target: "http://localhost:3350",
+        changeOrigin: true,
+      },
     },
   },
 });
