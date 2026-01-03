@@ -143,7 +143,7 @@ function App() {
   return (
     <div className="container">
       <header>
-        <h1>Lottery Every Second</h1>
+        <h1>LottoJak</h1>
         <p className="tagline">
           Why wait a week for disappointment when you can have it every second?
         </p>
