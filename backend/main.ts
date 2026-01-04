@@ -168,26 +168,27 @@ if (import.meta.main) {
       payloads.forEach((p) => socket.send(p));
     });
   });
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
+  Deno.serve({ port: 3350 }, async (req: Request) => {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
 
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  for (const [pattern, handler] of routes.entries()) {
-    const patternResult = pattern.exec(req.url);
-    if (patternResult) {
-      const response = await handler(patternResult, req);
-      // Add CORS to the response
-      Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v));
-      return response;
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
     }
-  }
 
-  return new Response("Not Found", { status: 404, headers: corsHeaders });
-});
+    for (const [pattern, handler] of routes.entries()) {
+      const patternResult = pattern.exec(req.url);
+      if (patternResult) {
+        const response = await handler(patternResult, req);
+        // Add CORS to the response
+        Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v));
+        return response;
+      }
+    }
+
+    return new Response("Not Found", { status: 404, headers: corsHeaders });
+  });
 }
