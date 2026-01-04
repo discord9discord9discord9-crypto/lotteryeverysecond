@@ -14,9 +14,9 @@ services:
         value: production
 
   # 2. The Frontend (Static Site)
-  - type: static
+  - type: web
     name: lottery-frontend
-    env: node
+    env: static
     plan: free
     buildCommand: cd frontend && npm install && npm run build
     publishDir: frontend/dist
