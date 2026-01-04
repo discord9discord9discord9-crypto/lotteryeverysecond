@@ -77,7 +77,7 @@ routes.set(new URLPattern({ pathname: "/ws" }), (_, req) => {
 routes.set(new URLPattern({ pathname: "/wins" }), () => {
   const wins =
     db.prepare(`SELECT COUNT(*) as count FROM draw WHERE score = 1.0`).get()?.[
-      "count"
+    "count"
     ] || 0;
 
   const json = JSON.stringify({ wins });
@@ -168,14 +168,26 @@ if (import.meta.main) {
       payloads.forEach((p) => socket.send(p));
     });
   });
-  Deno.serve({ port: 3350 }, (req) => {
-    for (const [pattern, handler] of routes.entries()) {
-      const patternResult = pattern.exec(req.url);
-      if (patternResult) {
-        return handler(patternResult, req);
-      }
-    }
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
 
-    return new Response("Not Found", { status: 404 });
-  });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  for (const [pattern, handler] of routes.entries()) {
+    const patternResult = pattern.exec(req.url);
+    if (patternResult) {
+      const response = await handler(patternResult, req);
+      // Add CORS to the response
+      Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v));
+      return response;
+    }
+  }
+
+  return new Response("Not Found", { status: 404, headers: corsHeaders });
+});
 }

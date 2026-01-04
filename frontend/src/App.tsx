@@ -11,7 +11,8 @@ import { useWebSocket } from "./useWebSocket.ts";
 import "./App.css";
 
 const fetchHistory = async (type: string, page: number) => {
-  const response = await fetch(`/history/${type}?page=${page}`);
+  const baseUrl = import.meta.env.VITE_API_URL || "";
+  const response = await fetch(`${baseUrl}/history/${type}?page=${page}`);
   const data = await response.json();
   return { data: data.data, total: data.total };
 };
@@ -73,8 +74,18 @@ function App() {
     await refetchAll(page - 1);
   };
 
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const ws = useWebSocket(`${protocol}//${window.location.host}/ws`);
+  const apiUrl = import.meta.env.VITE_API_URL || "";
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+
+  // If apiUrl starts with http/https, replace with ws/wss
+  const getWsUrl = () => {
+    if (apiUrl) {
+      return apiUrl.replace(/^http/, "ws");
+    }
+    return `${wsProtocol}//${window.location.host}/ws`;
+  }
+
+  const ws = useWebSocket(getWsUrl());
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
@@ -132,7 +143,8 @@ function App() {
     const fetchInitialData = async () => {
       await refetchAll(0);
 
-      const response = await fetch("/wins");
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      const response = await fetch(`${baseUrl}/wins`);
       const data = await response.json();
       setTotalWins(data.wins);
     };
